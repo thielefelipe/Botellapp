@@ -1,16 +1,36 @@
-const { PrismaLibSql } = require("@prisma/adapter-libsql");
-const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcryptjs");
 const path = require("path");
 
-const dbPath = path.resolve(__dirname, "../dev.db");
-const adapter = new PrismaLibSql({ url: "file:" + dbPath });
-const prisma = new PrismaClient({ adapter });
+async function getPrisma() {
+  const { PrismaClient } = require("@prisma/client");
+  const dbUrl = process.env.DATABASE_URL || "";
+  
+  if (!dbUrl || dbUrl.startsWith("file:") || dbUrl.startsWith("libsql:")) {
+    const { PrismaLibSql } = require("@prisma/adapter-libsql");
+    const url = dbUrl && dbUrl !== "file:./dev.db"
+      ? dbUrl
+      : "file:" + path.resolve(__dirname, "../dev.db");
+    const adapter = new PrismaLibSql({ url, authToken: process.env.DATABASE_AUTH_TOKEN });
+    return new PrismaClient({ adapter });
+  }
+  
+  // PostgreSQL
+  const { Pool } = require("pg");
+  const { PrismaPg } = require("@prisma/adapter-pg");
+  const pool = new Pool({
+    connectionString: dbUrl,
+    ssl: dbUrl.includes("sslmode=require") || process.env.NODE_ENV === "production"
+      ? { rejectUnauthorized: false }
+      : false,
+  });
+  const adapter = new PrismaPg(pool);
+  return new PrismaClient({ adapter });
+}
 
 async function main() {
+  const prisma = await getPrisma();
   console.log("🌱 Seeding database...");
 
-  // Usuarios
   const adminPass = bcrypt.hashSync("admin123", 10);
   const propPass = bcrypt.hashSync("propietario123", 10);
   const vendPass = bcrypt.hashSync("vendedor123", 10);
@@ -18,9 +38,8 @@ async function main() {
   await prisma.usuario.upsert({ where: { email: "admin@botellapp.cl" }, update: {}, create: { nombre: "Administrador", email: "admin@botellapp.cl", password: adminPass, rol: "ADMIN" } });
   await prisma.usuario.upsert({ where: { email: "propietario@botellapp.cl" }, update: {}, create: { nombre: "Carlos Rodríguez", email: "propietario@botellapp.cl", password: propPass, rol: "PROPIETARIO" } });
   await prisma.usuario.upsert({ where: { email: "vendedor@botellapp.cl" }, update: {}, create: { nombre: "Ana González", email: "vendedor@botellapp.cl", password: vendPass, rol: "VENDEDOR" } });
-  console.log("✓ Usuarios creados");
+  console.log("✓ Usuarios");
 
-  // Categorias
   for (const cat of [
     { nombre: "Vinos", color: "#7c3aed", icono: "🍷" },
     { nombre: "Cervezas", color: "#d97706", icono: "🍺" },
@@ -29,25 +48,19 @@ async function main() {
     { nombre: "Ron", color: "#b45309", icono: "🍹" },
     { nombre: "Bebidas", color: "#0284c7", icono: "🥤" },
     { nombre: "Snacks", color: "#16a34a", icono: "🍿" },
-  ]) {
-    await prisma.categoria.create({ data: cat }).catch(() => {});
-  }
-  console.log("✓ Categorías creadas");
+  ]) { await prisma.categoria.create({ data: cat }).catch(() => {}); }
+  console.log("✓ Categorías");
 
-  // Proveedores
-  for (const prov of [
+  for (const p of [
     { nombre: "Distribuidora Nacional SA", rut: "76.123.456-7", telefono: "+56 9 1234 5678", email: "ventas@distnacional.cl", direccion: "Av. Principal 123, Santiago" },
     { nombre: "Viña Santa Rita", rut: "90.234.567-8", telefono: "+56 2 2345 6789", email: "comercial@santarita.cl", direccion: "Camino Viñatero 456, Maipo" },
     { nombre: "CCU Chile", rut: "91.345.678-9", telefono: "+56 2 3456 7890", email: "distribuidores@ccu.cl", direccion: "Vitacura 2736, Santiago" },
-  ]) {
-    await prisma.proveedor.create({ data: prov }).catch(() => {});
-  }
-  console.log("✓ Proveedores creados");
+  ]) { await prisma.proveedor.create({ data: p }).catch(() => {}); }
+  console.log("✓ Proveedores");
 
   const cats = await prisma.categoria.findMany();
   const getCatId = (n) => cats.find(c => c.nombre === n)?.id || 1;
 
-  // Productos
   for (const prod of [
     { codigo: "V001", nombre: "Vino Santa Helena Merlot", precioCompra: 2500, precioVenta: 3990, stock: 48, stockMinimo: 10, categoriaId: getCatId("Vinos") },
     { codigo: "V002", nombre: "Vino Concha y Toro Casillero", precioCompra: 4200, precioVenta: 6490, stock: 36, stockMinimo: 8, categoriaId: getCatId("Vinos") },
@@ -62,23 +75,16 @@ async function main() {
     { codigo: "B001", nombre: "Coca-Cola 1.5L", precioCompra: 850, precioVenta: 1290, stock: 60, stockMinimo: 12, categoriaId: getCatId("Bebidas") },
     { codigo: "B002", nombre: "Agua Mineral 500ml", precioCompra: 280, precioVenta: 590, stock: 96, stockMinimo: 24, categoriaId: getCatId("Bebidas") },
     { codigo: "S001", nombre: "Maní Salado 100g", precioCompra: 350, precioVenta: 590, stock: 40, stockMinimo: 10, categoriaId: getCatId("Snacks") },
-  ]) {
-    await prisma.producto.create({ data: prod }).catch(() => {});
-  }
-  console.log("✓ Productos creados");
+  ]) { await prisma.producto.create({ data: prod }).catch(() => {}); }
+  console.log("✓ Productos");
 
   await prisma.configuracionTienda.upsert({
-    where: { id: 1 },
-    update: {},
+    where: { id: 1 }, update: {},
     create: { nombre: "BOTELLAPP Licorería", rut: "12.345.678-9", direccion: "Av. Las Licorerías 123, Santiago", telefono: "+56 9 8765 4321", email: "info@botellapp.cl", whatsapp: "+56987654321", moneda: "CLP" },
   });
-  console.log("✓ Configuración creada");
+  console.log("✓ Configuración");
 
-  console.log("\n✅ Database seeded successfully!");
-  console.log("\n📋 Credenciales de acceso:");
-  console.log("  Admin: admin@botellapp.cl / admin123");
-  console.log("  Propietario: propietario@botellapp.cl / propietario123");
-  console.log("  Vendedor: vendedor@botellapp.cl / vendedor123");
+  console.log("\n✅ Seeded!\n📋 Admin: admin@botellapp.cl / admin123");
   await prisma.$disconnect();
 }
 

@@ -1,66 +1,57 @@
-# 🍷 BOTELLAPP - Sistema de Gestión de Licorerías
+# 🍷 BOTELLAPP
 
-**BOTELLAPP** es una aplicación web completa para gestión de botillerías y licorerías. Sistema moderno con diseño oscuro profesional.
+**Sistema completo de gestión para botillerías y licorerías.**
+Disponible en Web, Escritorio (Windows/Mac/Linux) y Móvil (Android/iOS).
+
+---
+
+## 🌐 Acceso
+
+| Plataforma | Instrucciones |
+|-----------|---------------|
+| 🌐 **Web** | Visita tu URL de Render |
+| 🖥️ **Desktop** | Ver `electron/README.md` |
+| 📱 **Android** | PWA o APK — ver `mobile/README.md` |
+| 📱 **iPhone** | PWA o IPA — ver `mobile/README.md` |
+
+→ **Guía completa de despliegue:** [`DEPLOY.md`](./DEPLOY.md)
+
+---
 
 ## ✨ Funcionalidades
 
-### 🔐 Gestión de Usuarios
-- **3 roles**: Admin, Propietario y Vendedor
-- Inicio de sesión con autenticación JWT segura
-- Control de acceso por rol
+- 🔐 **Roles**: Admin, Propietario y Vendedor
+- 💰 **POS**: Ventas rápidas con carrito y múltiples pagos
+- 📦 **Inventario**: Productos, categorías y alertas de stock
+- 🛒 **Compras**: Órdenes a proveedores con actualización de stock
+- 🏦 **Caja**: Balance, ingresos y egresos en tiempo real
+- 📈 **Reportes**: KPIs y envío por Email/WhatsApp
+- ⚙️ **Configuración**: Datos del local y ajustes SMTP
 
-### 💰 Ventas Rápidas (POS)
-- Interfaz de punto de venta con búsqueda en tiempo real
-- Filtrado por categorías
-- Carrito de compras con ajuste de cantidades
-- Múltiples métodos de pago (Efectivo, Débito, Crédito, Transferencia)
-- Cálculo automático de descuentos y cambio
-- Actualización automática de stock
+---
 
-### 📦 Inventario
-- CRUD completo de productos
-- Gestión de categorías
-- Alertas de stock bajo
-- Precios de compra y venta
-- Gestión de códigos de barras
-
-### 🛒 Compras y Proveedores
-- Registro de compras por proveedor
-- Actualización automática de stock
-- Historial de compras
-- Gestión completa de proveedores (RUT, contacto, dirección)
-
-### 🏦 Caja
-- Balance en tiempo real
-- Registro de ingresos y egresos
-- Múltiples categorías de movimientos
-- Historial completo con filtros
-
-### 📈 Reportes
-- KPIs en tiempo real
-- Top productos más vendidos
-- Análisis por método de pago
-- **Envío automático** de reportes por:
-  - 📧 Email (con configuración SMTP)
-  - 📱 WhatsApp (vía WhatsApp Business API)
-
-## 🚀 Instalación
+## 🚀 Desarrollo Local
 
 ```bash
-# 1. Instalar dependencias
+# 1. Instalar
 npm install
 
-# 2. Crear base de datos y tablas
-npx prisma db push
+# 2. Base de datos SQLite (automática)
+npm run db:push && npm run seed
 
-# 3. Cargar datos de ejemplo
-npm run seed
-
-# 4. Iniciar servidor de desarrollo
+# 3. Iniciar
 npm run dev
 ```
+→ http://localhost:3000
 
-## 🔑 Credenciales de Demo
+**Con PostgreSQL (Docker):**
+```bash
+docker compose up -d
+# En .env: DATABASE_URL="postgresql://botellapp:botellapp@localhost:5432/botellapp"
+npm run db:push && npm run seed && npm run dev
+```
+
+## 🔑 Credenciales Demo
 
 | Rol | Email | Contraseña |
 |-----|-------|------------|
@@ -68,60 +59,32 @@ npm run dev
 | Propietario | propietario@botellapp.cl | propietario123 |
 | Vendedor | vendedor@botellapp.cl | vendedor123 |
 
-## 🛠 Stack Tecnológico
+---
 
-- **Frontend**: Next.js 14 + TypeScript + Tailwind CSS
-- **Backend**: Next.js API Routes
-- **Base de datos**: SQLite + Prisma ORM (v7)
+## 🛠 Stack
+
+- **Web**: Next.js 16 + TypeScript + Tailwind CSS
+- **BD local**: SQLite + `@prisma/adapter-libsql`
+- **BD producción**: PostgreSQL + `@prisma/adapter-pg`
 - **Auth**: JWT con cookies httpOnly
-- **Adapter**: `@prisma/adapter-libsql` + `@libsql/client`
-
-## 📁 Estructura del Proyecto
-
-```
-botellapp/
-├── app/
-│   ├── api/          # API Routes
-│   │   ├── auth/     # Login, logout, me
-│   │   ├── productos/
-│   │   ├── ventas/
-│   │   ├── compras/
-│   │   ├── proveedores/
-│   │   ├── caja/
-│   │   ├── categorias/
-│   │   ├── dashboard/
-│   │   └── configuracion/
-│   ├── dashboard/    # Páginas del dashboard
-│   │   ├── ventas/
-│   │   ├── inventario/
-│   │   ├── compras/
-│   │   ├── proveedores/
-│   │   ├── caja/
-│   │   ├── reportes/
-│   │   └── configuracion/
-│   └── login/
-├── components/
-│   └── dashboard/
-│       └── Sidebar.tsx
-├── lib/
-│   ├── prisma.ts    # Cliente Prisma con adapter libsql
-│   ├── auth.ts      # JWT utilities
-│   └── utils.ts     # Formatters y helpers
-└── prisma/
-    ├── schema.prisma
-    ├── seed.js       # Datos de ejemplo
-    └── dev.db        # Base de datos SQLite
-```
-
-## 📱 Capturas de Pantalla
-
-- **Login**: Pantalla de inicio de sesión con credenciales demo
-- **Dashboard**: Estadísticas en tiempo real y acciones rápidas
-- **POS**: Sistema de ventas con grid de productos y carrito
-- **Inventario**: Tabla completa con estados de stock
-- **Caja**: Balance con movimientos de ingresos/egresos
-- **Reportes**: Métricas y opción de envío a email/WhatsApp
+- **Desktop**: Electron 33 (Windows/Mac/Linux)
+- **Mobile**: Capacitor 6 (Android/iOS) + PWA
 
 ---
 
-**BOTELLAPP** © 2024 - Sistema de Gestión de Licorerías
+## 📁 Estructura
+
+```
+botellapp/
+├── app/              # Next.js App Router (páginas + APIs)
+├── components/       # Componentes React reutilizables
+├── lib/              # Prisma, Auth, Utils
+├── prisma/           # Schema, migrations, seed
+├── scripts/          # Scripts de inicio en producción
+├── electron/         # App de escritorio
+├── mobile/           # App móvil (Capacitor)
+├── render.yaml       # Configuración Render
+├── docker-compose.yml # PostgreSQL local
+├── DEPLOY.md         # Guía completa de despliegue
+└── .env.example      # Variables de entorno
+```

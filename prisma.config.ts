@@ -3,8 +3,11 @@
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
 
+// Use PostgreSQL schema if DATABASE_URL is a PostgreSQL URL, otherwise SQLite
+const isPg = process.env["DATABASE_URL"]?.startsWith("postgres");
+
 export default defineConfig({
-  schema: "prisma/schema.prisma",
+  schema: isPg ? "prisma/schema.pg.prisma" : "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
   },
@@ -12,3 +15,4 @@ export default defineConfig({
     url: process.env["DATABASE_URL"],
   },
 });
+

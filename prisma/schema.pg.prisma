@@ -1,0 +1,135 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Usuario {
+  id           Int      @id @default(autoincrement())
+  nombre       String
+  email        String   @unique
+  password     String
+  rol          String   @default("VENDEDOR")
+  activo       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  ventas       Venta[]
+  movimientos  MovimientoCaja[]
+}
+
+model Categoria {
+  id        Int       @id @default(autoincrement())
+  nombre    String
+  color     String    @default("#6366f1")
+  icono     String    @default("🍷")
+  productos Producto[]
+}
+
+model Proveedor {
+  id        Int       @id @default(autoincrement())
+  nombre    String
+  rut       String?
+  telefono  String?
+  email     String?
+  direccion String?
+  activo    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  compras   Compra[]
+}
+
+model Producto {
+  id            Int             @id @default(autoincrement())
+  codigo        String?         @unique
+  nombre        String
+  descripcion   String?
+  precioCompra  Float           @default(0)
+  precioVenta   Float
+  stock         Int             @default(0)
+  stockMinimo   Int             @default(5)
+  unidad        String          @default("unidad")
+  activo        Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  categoriaId   Int?
+  categoria     Categoria?      @relation(fields: [categoriaId], references: [id])
+  itemsVenta    ItemVenta[]
+  itemsCompra   ItemCompra[]
+}
+
+model Venta {
+  id          Int         @id @default(autoincrement())
+  numero      String      @unique
+  total       Float
+  subtotal    Float
+  descuento   Float       @default(0)
+  metodoPago  String      @default("efectivo")
+  estado      String      @default("completada")
+  notas       String?
+  createdAt   DateTime    @default(now())
+  usuarioId   Int
+  usuario     Usuario     @relation(fields: [usuarioId], references: [id])
+  items       ItemVenta[]
+}
+
+model ItemVenta {
+  id         Int      @id @default(autoincrement())
+  cantidad   Int
+  precio     Float
+  subtotal   Float
+  ventaId    Int
+  venta      Venta    @relation(fields: [ventaId], references: [id])
+  productoId Int
+  producto   Producto @relation(fields: [productoId], references: [id])
+}
+
+model Compra {
+  id           Int          @id @default(autoincrement())
+  numero       String       @unique
+  total        Float
+  estado       String       @default("recibida")
+  notas        String?
+  fechaCompra  DateTime     @default(now())
+  createdAt    DateTime     @default(now())
+  proveedorId  Int
+  proveedor    Proveedor    @relation(fields: [proveedorId], references: [id])
+  items        ItemCompra[]
+}
+
+model ItemCompra {
+  id         Int      @id @default(autoincrement())
+  cantidad   Int
+  precio     Float
+  subtotal   Float
+  compraId   Int
+  compra     Compra   @relation(fields: [compraId], references: [id])
+  productoId Int
+  producto   Producto @relation(fields: [productoId], references: [id])
+}
+
+model MovimientoCaja {
+  id          Int      @id @default(autoincrement())
+  tipo        String
+  categoria   String
+  descripcion String
+  monto       Float
+  metodoPago  String   @default("efectivo")
+  fecha       DateTime @default(now())
+  usuarioId   Int
+  usuario     Usuario  @relation(fields: [usuarioId], references: [id])
+}
+
+model ConfiguracionTienda {
+  id           Int     @id @default(autoincrement())
+  nombre       String  @default("BOTELLAPP")
+  rut          String?
+  direccion    String?
+  telefono     String?
+  email        String?
+  whatsapp     String?
+  logoUrl      String?
+  moneda       String  @default("CLP")
+  reporteEmail Boolean @default(false)
+  reporteWhats Boolean @default(false)
+}

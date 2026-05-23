@@ -1,0 +1,29 @@
+# BOTELLAPP - Render Deployment Configuration
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: botellapp
+    env: node
+    region: oregon
+    plan: free
+    rootDir: .
+    buildCommand: npm ci && DATABASE_URL=$DATABASE_URL npx prisma generate && npm run build
+    startCommand: node scripts/start.js
+    healthCheckPath: /api/auth/me
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: botellapp-db
+          property: connectionString
+
+databases:
+  - name: botellapp-db
+    plan: free
+    region: oregon
+    databaseName: botellapp
+    user: botellapp
