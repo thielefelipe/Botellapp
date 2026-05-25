@@ -5,9 +5,12 @@ const JWT_SECRET = process.env.JWT_SECRET || "botellapp-secret-2024";
 
 export interface TokenPayload {
   id: number;
-  email: string;
+  username: string;
   nombre: string;
   rol: string;
+  negocioId: number;
+  clienteId: number;
+  negocioNombre: string;
 }
 
 export function signToken(payload: TokenPayload): string {

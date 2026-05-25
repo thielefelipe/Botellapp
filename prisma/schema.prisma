@@ -3,21 +3,52 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
+model Cliente {
+  id        Int       @id @default(autoincrement())
+  nombre    String
+  slug      String    @unique
+  activo    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  negocios  Negocio[]
+}
+
+model Negocio {
+  id            Int                  @id @default(autoincrement())
+  nombre        String
+  slug          String               @unique
+  activo        Boolean              @default(true)
+  createdAt     DateTime             @default(now())
+  clienteId     Int
+  cliente       Cliente              @relation(fields: [clienteId], references: [id])
+  usuarios      Usuario[]
+  productos     Producto[]
+  ventas        Venta[]
+  compras       Compra[]
+  proveedores   Proveedor[]
+  categorias    Categoria[]
+  movimientos   MovimientoCaja[]
+  configuracion ConfiguracionTienda?
+}
+
 model Usuario {
-  id           Int      @id @default(autoincrement())
-  nombre       String
-  email        String   @unique
-  password     String
-  rol          String   @default("VENDEDOR")
-  activo       Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  ventas       Venta[]
-  movimientos  MovimientoCaja[]
+  id          Int            @id @default(autoincrement())
+  nombre      String
+  username    String
+  password    String
+  rol         String         @default("VENDEDOR")
+  activo      Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  negocioId   Int
+  negocio     Negocio        @relation(fields: [negocioId], references: [id])
+  ventas      Venta[]
+  movimientos MovimientoCaja[]
+
+  @@unique([negocioId, username])
 }
 
 model Categoria {
@@ -25,6 +56,8 @@ model Categoria {
   nombre    String
   color     String    @default("#6366f1")
   icono     String    @default("🍷")
+  negocioId Int
+  negocio   Negocio   @relation(fields: [negocioId], references: [id])
   productos Producto[]
 }
 
@@ -37,12 +70,14 @@ model Proveedor {
   direccion String?
   activo    Boolean   @default(true)
   createdAt DateTime  @default(now())
+  negocioId Int
+  negocio   Negocio   @relation(fields: [negocioId], references: [id])
   compras   Compra[]
 }
 
 model Producto {
   id            Int             @id @default(autoincrement())
-  codigo        String?         @unique
+  codigo        String?
   nombre        String
   descripcion   String?
   precioCompra  Float           @default(0)
@@ -54,7 +89,9 @@ model Producto {
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   categoriaId   Int?
+  negocioId     Int
   categoria     Categoria?      @relation(fields: [categoriaId], references: [id])
+  negocio       Negocio         @relation(fields: [negocioId], references: [id])
   itemsVenta    ItemVenta[]
   itemsCompra   ItemCompra[]
 }
@@ -70,7 +107,9 @@ model Venta {
   notas       String?
   createdAt   DateTime    @default(now())
   usuarioId   Int
+  negocioId   Int
   usuario     Usuario     @relation(fields: [usuarioId], references: [id])
+  negocio     Negocio     @relation(fields: [negocioId], references: [id])
   items       ItemVenta[]
 }
 
@@ -94,7 +133,9 @@ model Compra {
   fechaCompra  DateTime     @default(now())
   createdAt    DateTime     @default(now())
   proveedorId  Int
+  negocioId    Int
   proveedor    Proveedor    @relation(fields: [proveedorId], references: [id])
+  negocio      Negocio      @relation(fields: [negocioId], references: [id])
   items        ItemCompra[]
 }
 
@@ -118,7 +159,9 @@ model MovimientoCaja {
   metodoPago  String   @default("efectivo")
   fecha       DateTime @default(now())
   usuarioId   Int
+  negocioId   Int
   usuario     Usuario  @relation(fields: [usuarioId], references: [id])
+  negocio     Negocio  @relation(fields: [negocioId], references: [id])
 }
 
 model ConfiguracionTienda {
@@ -133,4 +176,6 @@ model ConfiguracionTienda {
   moneda       String  @default("CLP")
   reporteEmail Boolean @default(false)
   reporteWhats Boolean @default(false)
+  negocioId    Int     @unique
+  negocio      Negocio @relation(fields: [negocioId], references: [id])
 }

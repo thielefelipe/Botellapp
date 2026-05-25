@@ -11,9 +11,10 @@ export async function GET() {
     }
 
     const ventas = await prisma.venta.findMany({
+      where: { negocioId: session.negocioId },
       include: {
         items: { include: { producto: true } },
-        usuario: { select: { id: true, nombre: true, email: true } },
+        usuario: { select: { id: true, nombre: true, username: true } },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -55,6 +56,7 @@ export async function POST(req: NextRequest) {
         metodoPago,
         notas,
         usuarioId: session.id,
+        negocioId: session.negocioId,
         items: {
           create: items.map((item: { productoId: number; cantidad: number; precio: number }) => ({
             productoId: item.productoId,
@@ -66,7 +68,7 @@ export async function POST(req: NextRequest) {
       },
       include: {
         items: { include: { producto: true } },
-        usuario: { select: { id: true, nombre: true, email: true } },
+        usuario: { select: { id: true, nombre: true, username: true } },
       },
     });
 
@@ -89,6 +91,7 @@ export async function POST(req: NextRequest) {
         monto: total,
         metodoPago,
         usuarioId: session.id,
+        negocioId: session.negocioId,
       },
     });
 

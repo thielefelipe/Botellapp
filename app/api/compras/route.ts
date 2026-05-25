@@ -11,6 +11,7 @@ export async function GET() {
     }
 
     const compras = await prisma.compra.findMany({
+      where: { negocioId: session.negocioId },
       include: {
         proveedor: true,
         items: { include: { producto: true } },
@@ -55,6 +56,7 @@ export async function POST(req: NextRequest) {
         total,
         notas,
         proveedorId,
+        negocioId: session.negocioId,
         items: {
           create: items.map((item: { productoId: number; cantidad: number; precio: number }) => ({
             productoId: item.productoId,
@@ -89,6 +91,7 @@ export async function POST(req: NextRequest) {
         monto: total,
         metodoPago: "efectivo",
         usuarioId: session.id,
+        negocioId: session.negocioId,
       },
     });
 

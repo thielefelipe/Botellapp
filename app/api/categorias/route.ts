@@ -10,6 +10,7 @@ export async function GET() {
     }
 
     const categorias = await prisma.categoria.findMany({
+      where: { negocioId: session.negocioId },
       include: {
         _count: { select: { productos: true } },
       },
@@ -46,6 +47,7 @@ export async function POST(req: NextRequest) {
         nombre,
         color: color ?? "#6366f1",
         icono: icono ?? "🍷",
+        negocioId: session.negocioId,
       },
       include: {
         _count: { select: { productos: true } },

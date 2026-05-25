@@ -23,7 +23,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const { nombre, descripcion, precioCompra, precioVenta, stock, stockMinimo, unidad, categoriaId, codigo } = body;
 
     const producto = await prisma.producto.update({
-      where: { id: productoId },
+      where: { id: productoId, negocioId: session.negocioId },
       data: {
         ...(nombre !== undefined && { nombre }),
         ...(descripcion !== undefined && { descripcion }),
@@ -63,7 +63,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     }
 
     await prisma.producto.update({
-      where: { id: productoId },
+      where: { id: productoId, negocioId: session.negocioId },
       data: { activo: false },
     });
 
