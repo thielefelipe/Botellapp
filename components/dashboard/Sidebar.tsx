@@ -16,7 +16,7 @@ const menuItems = [
 ];
 
 interface SidebarProps {
-  usuario: { nombre: string; rol: string; email: string };
+  usuario: { nombre: string; rol: string; username: string; negocioNombre: string };
 }
 
 export default function Sidebar({ usuario }: SidebarProps) {
@@ -46,15 +46,17 @@ export default function Sidebar({ usuario }: SidebarProps) {
 
   return (
     <aside className="w-64 min-h-screen bg-[#13161f] border-r border-[#2d3148] flex flex-col">
-      {/* Logo */}
+      {/* Logo + Negocio */}
       <div className="p-6 border-b border-[#2d3148]">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-amber-600 rounded-xl flex items-center justify-center shadow-lg">
             <span className="text-xl">🍷</span>
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             <h1 className="font-bold text-white text-lg leading-none">BOTELLAPP</h1>
-            <p className="text-slate-500 text-xs">Licorería</p>
+            <p className="text-slate-400 text-xs truncate" title={usuario.negocioNombre}>
+              🏪 {usuario.negocioNombre}
+            </p>
           </div>
         </div>
       </div>
@@ -89,9 +91,11 @@ export default function Sidebar({ usuario }: SidebarProps) {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-white truncate">{usuario.nombre}</p>
-              <span className={`text-xs px-2 py-0.5 rounded-full border ${rolColor}`}>
-                {rolLabel}
-              </span>
+              <div className="flex items-center gap-1 mt-0.5">
+                <span className={`text-xs px-2 py-0.5 rounded-full border ${rolColor}`}>
+                  {rolLabel}
+                </span>
+              </div>
             </div>
           </div>
         </div>

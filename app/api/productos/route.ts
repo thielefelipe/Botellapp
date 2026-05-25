@@ -10,7 +10,7 @@ export async function GET() {
     }
 
     const productos = await prisma.producto.findMany({
-      where: { activo: true },
+      where: { activo: true, negocioId: session.negocioId },
       include: { categoria: true },
       orderBy: { nombre: "asc" },
     });
@@ -51,6 +51,7 @@ export async function POST(req: NextRequest) {
         unidad: unidad ?? "unidad",
         categoriaId: categoriaId ?? null,
         codigo: codigo ?? null,
+        negocioId: session.negocioId,
       },
       include: { categoria: true },
     });

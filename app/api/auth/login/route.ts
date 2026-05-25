@@ -5,13 +5,28 @@ import bcrypt from "bcryptjs";
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, password } = await req.json();
+    const { negocioId, username, password } = await req.json();
 
-    if (!email || !password) {
-      return NextResponse.json({ error: "Email y contraseña requeridos" }, { status: 400 });
+    if (!negocioId || !username || !password) {
+      return NextResponse.json(
+        { error: "Negocio, usuario y contraseña son requeridos" },
+        { status: 400 }
+      );
     }
 
-    const usuario = await prisma.usuario.findUnique({ where: { email } });
+    const usuario = await prisma.usuario.findUnique({
+      where: {
+        negocioId_username: {
+          negocioId: Number(negocioId),
+          username: username.trim(),
+        },
+      },
+      include: {
+        negocio: {
+          include: { cliente: true },
+        },
+      },
+    });
 
     if (!usuario || !usuario.activo) {
       return NextResponse.json({ error: "Credenciales inválidas" }, { status: 401 });
@@ -24,9 +39,12 @@ export async function POST(req: NextRequest) {
 
     const token = signToken({
       id: usuario.id,
-      email: usuario.email,
+      username: usuario.username,
       nombre: usuario.nombre,
       rol: usuario.rol,
+      negocioId: usuario.negocioId,
+      clienteId: usuario.negocio.clienteId,
+      negocioNombre: usuario.negocio.nombre,
     });
 
     const { password: _, ...usuarioSinPassword } = usuario;

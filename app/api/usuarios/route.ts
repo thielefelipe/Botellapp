@@ -12,11 +12,21 @@ export async function GET() {
     }
 
     const usuarios = await prisma.usuario.findMany({
-      select: { id: true, nombre: true, email: true, rol: true, activo: true, createdAt: true },
+      where: { negocioId: session.negocioId },
+      select: {
+        id: true,
+        nombre: true,
+        username: true,
+        rol: true,
+        activo: true,
+        createdAt: true,
+        negocioId: true,
+      },
       orderBy: { createdAt: "desc" },
     });
     return NextResponse.json(usuarios);
   } catch (error) {
+    console.error("GET usuarios error:", error);
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
 }
@@ -27,16 +37,35 @@ export async function POST(req: NextRequest) {
     if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     if (session.rol !== "ADMIN") return NextResponse.json({ error: "Sin permisos" }, { status: 403 });
 
-    const { nombre, email, password, rol } = await req.json();
+    const { nombre, username, password, rol } = await req.json();
+
+    if (!nombre || !username || !password) {
+      return NextResponse.json({ error: "Nombre, usuario y contraseña son requeridos" }, { status: 400 });
+    }
+
     const hashed = await bcrypt.hash(password, 10);
     const usuario = await prisma.usuario.create({
-      data: { nombre, email, password: hashed, rol: rol || "VENDEDOR" },
-      select: { id: true, nombre: true, email: true, rol: true, activo: true, createdAt: true },
+      data: {
+        nombre,
+        username: username.trim(),
+        password: hashed,
+        rol: rol || "VENDEDOR",
+        negocioId: session.negocioId,
+      },
+      select: {
+        id: true,
+        nombre: true,
+        username: true,
+        rol: true,
+        activo: true,
+        createdAt: true,
+        negocioId: true,
+      },
     });
     return NextResponse.json(usuario, { status: 201 });
   } catch (error: unknown) {
     const e = error as { code?: string };
-    if (e.code === "P2002") return NextResponse.json({ error: "Email ya registrado" }, { status: 400 });
+    if (e.code === "P2002") return NextResponse.json({ error: "Usuario ya existe en este negocio" }, { status: 400 });
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
 }

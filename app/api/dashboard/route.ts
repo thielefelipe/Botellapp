@@ -9,6 +9,7 @@ export async function GET() {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     }
 
+    const negocioId = session.negocioId;
     const now = new Date();
 
     // Today boundaries
@@ -21,27 +22,29 @@ export async function GET() {
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
-    // Ventas hoy
+    // Ventas hoy (solo de este negocio)
     const ventasHoyResult = await prisma.venta.aggregate({
       _sum: { total: true },
       where: {
+        negocioId,
         createdAt: { gte: todayStart, lte: todayEnd },
         estado: "completada",
       },
     });
 
-    // Ventas este mes
+    // Ventas este mes (solo de este negocio)
     const ventasMesResult = await prisma.venta.aggregate({
       _sum: { total: true },
       where: {
+        negocioId,
         createdAt: { gte: monthStart, lte: monthEnd },
         estado: "completada",
       },
     });
 
-    // Productos con stock bajo (stock < stockMinimo)
+    // Productos con stock bajo (solo de este negocio)
     const todosProductos = await prisma.producto.findMany({
-      where: { activo: true },
+      where: { activo: true, negocioId },
       select: {
         id: true,
         nombre: true,
@@ -53,16 +56,18 @@ export async function GET() {
     });
     const productosStockBajo = todosProductos.filter((p) => p.stock < p.stockMinimo);
 
-    // Caja balance
+    // Caja balance (solo de este negocio)
     const allMovimientos = await prisma.movimientoCaja.findMany({
+      where: { negocioId },
       select: { tipo: true, monto: true },
     });
     const cajaBalance = allMovimientos.reduce((acc, m) => {
       return m.tipo === "ingreso" ? acc + m.monto : acc - m.monto;
     }, 0);
 
-    // Ventas recientes (last 5)
+    // Ventas recientes (last 5, solo de este negocio)
     const ventasRecientes = await prisma.venta.findMany({
+      where: { negocioId },
       take: 5,
       orderBy: { createdAt: "desc" },
       include: {
@@ -71,12 +76,13 @@ export async function GET() {
       },
     });
 
-    // Top 5 productos by quantity sold this month
+    // Top 5 productos by quantity sold this month (solo de este negocio)
     const topProductosRaw = await prisma.itemVenta.groupBy({
       by: ["productoId"],
       _sum: { cantidad: true },
       where: {
         venta: {
+          negocioId,
           createdAt: { gte: monthStart, lte: monthEnd },
           estado: "completada",
         },

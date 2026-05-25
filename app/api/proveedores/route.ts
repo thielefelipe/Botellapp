@@ -10,7 +10,7 @@ export async function GET() {
     }
 
     const proveedores = await prisma.proveedor.findMany({
-      where: { activo: true },
+      where: { activo: true, negocioId: session.negocioId },
       orderBy: { nombre: "asc" },
     });
 
@@ -46,6 +46,7 @@ export async function POST(req: NextRequest) {
         telefono: telefono ?? null,
         email: email ?? null,
         direccion: direccion ?? null,
+        negocioId: session.negocioId,
       },
     });
 

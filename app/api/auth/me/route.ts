@@ -14,10 +14,14 @@ export async function GET() {
       select: {
         id: true,
         nombre: true,
-        email: true,
+        username: true,
         rol: true,
         activo: true,
         createdAt: true,
+        negocioId: true,
+        negocio: {
+          select: { id: true, nombre: true, slug: true },
+        },
       },
     });
 

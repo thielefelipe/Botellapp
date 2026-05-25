@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
     const tipo = searchParams.get("tipo");
     const fecha = searchParams.get("fecha");
 
-    const where: Record<string, unknown> = {};
+    const where: Record<string, unknown> = { negocioId: session.negocioId };
 
     if (tipo) {
       where.tipo = tipo;
@@ -30,13 +30,14 @@ export async function GET(req: NextRequest) {
     const movimientos = await prisma.movimientoCaja.findMany({
       where,
       include: {
-        usuario: { select: { id: true, nombre: true, email: true } },
+        usuario: { select: { id: true, nombre: true, username: true } },
       },
       orderBy: { fecha: "desc" },
     });
 
-    // Compute balance: sum ingresos - sum egresos
+    // Compute balance: sum ingresos - sum egresos (solo de este negocio)
     const allMovimientos = await prisma.movimientoCaja.findMany({
+      where: { negocioId: session.negocioId },
       select: { tipo: true, monto: true },
     });
 
@@ -59,7 +60,9 @@ export async function POST(req: NextRequest) {
     }
 
     if (!["ADMIN", "PROPIETARIO"].includes(session.rol)) {
-      return NextResponse.json({ error: "Sin permisos. Solo admins y propietarios pueden registrar movimientos manuales." }, { status: 403 });
+      return NextResponse.json({
+        error: "Sin permisos. Solo admins y propietarios pueden registrar movimientos manuales.",
+      }, { status: 403 });
     }
 
     const body = await req.json();
@@ -84,9 +87,10 @@ export async function POST(req: NextRequest) {
         monto: Number(monto),
         metodoPago,
         usuarioId: session.id,
+        negocioId: session.negocioId,
       },
       include: {
-        usuario: { select: { id: true, nombre: true, email: true } },
+        usuario: { select: { id: true, nombre: true, username: true } },
       },
     });
 
