@@ -1,0 +1,5 @@
+{
+  "buildCommand": "npm ci && npx prisma generate && npx prisma db push --skip-generate && node prisma/seed.js && npm run build",
+  "installCommand": "npm ci",
+  "framework": "nextjs"
+}
