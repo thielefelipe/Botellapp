@@ -19,7 +19,8 @@ export function formatDate(date: string | Date): string {
 export function generateNumero(prefix: string): string {
   const now = new Date();
   const timestamp = now.getTime().toString().slice(-6);
-  return `${prefix}-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${timestamp}`;
+  const random = Math.random().toString(36).slice(2, 6).toUpperCase();
+  return `${prefix}-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${timestamp}${random}`;
 }
 
 export function classNames(...classes: (string | boolean | undefined)[]): string {

@@ -44,55 +44,81 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Proveedor e items son requeridos" }, { status: 400 });
     }
 
-    const total = items.reduce(
-      (acc: number, item: { cantidad: number; precio: number }) => acc + item.cantidad * item.precio,
-      0
-    );
+    const proveedor = await prisma.proveedor.findFirst({
+      where: { id: Number(proveedorId), negocioId: session.negocioId },
+    });
+    if (!proveedor) {
+      return NextResponse.json(
+        { error: "El proveedor no existe o no pertenece a este negocio" },
+        { status: 400 }
+      );
+    }
+
+    const itemsCompra: { productoId: number; cantidad: number; precio: number; subtotal: number }[] = [];
+    for (const item of items as { productoId: number; cantidad: number; precio: number }[]) {
+      const productoId = Number(item.productoId);
+      const cantidad = Number(item.cantidad);
+      const precio = Number(item.precio);
+      if (
+        !Number.isInteger(productoId) ||
+        !Number.isInteger(cantidad) || cantidad <= 0 ||
+        !Number.isFinite(precio) || precio < 0
+      ) {
+        return NextResponse.json({ error: "Item inválido" }, { status: 400 });
+      }
+      itemsCompra.push({ productoId, cantidad, precio, subtotal: cantidad * precio });
+    }
+
+    const productoIds = [...new Set(itemsCompra.map((i) => i.productoId))];
+    const productosCount = await prisma.producto.count({
+      where: { id: { in: productoIds }, negocioId: session.negocioId },
+    });
+    if (productosCount !== productoIds.length) {
+      return NextResponse.json(
+        { error: "Uno o más productos no existen o no pertenecen a este negocio" },
+        { status: 400 }
+      );
+    }
+
+    const total = itemsCompra.reduce((acc, item) => acc + item.subtotal, 0);
     const numero = generateNumero("C");
 
-    const compra = await prisma.compra.create({
-      data: {
-        numero,
-        total,
-        notas,
-        proveedorId,
-        negocioId: session.negocioId,
-        items: {
-          create: items.map((item: { productoId: number; cantidad: number; precio: number }) => ({
-            productoId: item.productoId,
-            cantidad: item.cantidad,
-            precio: item.precio,
-            subtotal: item.cantidad * item.precio,
-          })),
+    const compra = await prisma.$transaction(async (tx) => {
+      const compra = await tx.compra.create({
+        data: {
+          numero,
+          total,
+          notas,
+          proveedorId: proveedor.id,
+          negocioId: session.negocioId,
+          items: { create: itemsCompra },
         },
-      },
-      include: {
-        proveedor: true,
-        items: { include: { producto: true } },
-      },
-    });
+        include: {
+          proveedor: true,
+          items: { include: { producto: true } },
+        },
+      });
 
-    // Increment stock for each product
-    await Promise.all(
-      items.map((item: { productoId: number; cantidad: number }) =>
-        prisma.producto.update({
-          where: { id: item.productoId },
+      for (const item of itemsCompra) {
+        await tx.producto.update({
+          where: { id: item.productoId, negocioId: session.negocioId },
           data: { stock: { increment: item.cantidad } },
-        })
-      )
-    );
+        });
+      }
 
-    // Create caja egreso record
-    await prisma.movimientoCaja.create({
-      data: {
-        tipo: "egreso",
-        categoria: "compra",
-        descripcion: `Compra ${numero}`,
-        monto: total,
-        metodoPago: "efectivo",
-        usuarioId: session.id,
-        negocioId: session.negocioId,
-      },
+      await tx.movimientoCaja.create({
+        data: {
+          tipo: "egreso",
+          categoria: "compra",
+          descripcion: `Compra ${numero}`,
+          monto: total,
+          metodoPago: "efectivo",
+          usuarioId: session.id,
+          negocioId: session.negocioId,
+        },
+      });
+
+      return compra;
     });
 
     return NextResponse.json({ compra }, { status: 201 });

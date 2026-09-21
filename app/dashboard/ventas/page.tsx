@@ -119,7 +119,8 @@ export default function VentasPage() {
             precio: i.precio,
           })),
           metodoPago,
-          descuento,
+          // El backend espera el descuento como monto ($), no como porcentaje.
+          descuento: totalDescuento,
           notas,
         }),
       });
@@ -144,7 +145,7 @@ export default function VentasPage() {
     } finally {
       setProcesando(false);
     }
-  }, [carrito, metodoPago, descuento, notas]);
+  }, [carrito, metodoPago, totalDescuento, notas]);
 
   return (
     <div className="h-screen flex overflow-hidden">
