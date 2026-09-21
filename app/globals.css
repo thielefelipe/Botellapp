@@ -50,3 +50,23 @@ body {
 .fade-in {
   animation: fadeIn 0.3s ease-out;
 }
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #boleta-print-area,
+  #boleta-print-area * {
+    visibility: visible;
+  }
+  #boleta-print-area {
+    position: fixed;
+    inset: 0;
+    padding: 0;
+    margin: 0;
+    background: #fff;
+  }
+  .no-print {
+    display: none !important;
+  }
+}

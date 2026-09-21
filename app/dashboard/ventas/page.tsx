@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { formatCLP } from "@/lib/utils";
+import { formatCLP, formatDate } from "@/lib/utils";
 
 interface Producto {
   id: number;
@@ -21,6 +21,37 @@ interface ItemCarrito {
   stock: number;
 }
 
+interface VentaCompletada {
+  id: number;
+  numero: string;
+  subtotal: number;
+  descuento: number;
+  total: number;
+  metodoPago: string;
+  createdAt: string;
+  usuario: { nombre: string };
+  items: {
+    cantidad: number;
+    precio: number;
+    subtotal: number;
+    producto: { nombre: string; codigo: string | null };
+  }[];
+}
+
+interface Configuracion {
+  nombre: string;
+  rut: string | null;
+  direccion: string | null;
+  telefono: string | null;
+}
+
+const METODOS_PAGO_LABEL: Record<string, string> = {
+  efectivo: "Efectivo",
+  debito: "Débito",
+  credito: "Crédito",
+  transferencia: "Transferencia",
+};
+
 const METODOS_PAGO = [
   { value: "efectivo", label: "💵 Efectivo" },
   { value: "debito", label: "💳 Débito" },
@@ -37,9 +68,10 @@ export default function VentasPage() {
   const [descuento, setDescuento] = useState(0);
   const [notas, setNotas] = useState("");
   const [procesando, setProcesando] = useState(false);
-  const [ventaExitosa, setVentaExitosa] = useState<string | null>(null);
+  const [ventaCompletada, setVentaCompletada] = useState<VentaCompletada | null>(null);
   const [montoPagado, setMontoPagado] = useState<number>(0);
   const [categorias, setCategorias] = useState<string[]>([]);
+  const [configuracion, setConfiguracion] = useState<Configuracion | null>(null);
 
   useEffect(() => {
     fetch("/api/productos")
@@ -49,6 +81,10 @@ export default function VentasPage() {
         const cats = [...new Set(data.map((p: Producto) => p.categoria?.nombre).filter(Boolean))] as string[];
         setCategorias(cats);
       });
+    fetch("/api/configuracion")
+      .then((r) => r.json())
+      .then(setConfiguracion)
+      .catch(() => {});
   }, []);
 
   const productosFiltrados = productos.filter((p) => {
@@ -131,8 +167,8 @@ export default function VentasPage() {
         return;
       }
 
-      const venta = await res.json();
-      setVentaExitosa(venta.numero);
+      const data = await res.json();
+      setVentaCompletada(data.venta);
       setCarrito([]);
       setDescuento(0);
       setNotas("");
@@ -362,22 +398,76 @@ export default function VentasPage() {
         </div>
       </div>
 
-      {/* Venta exitosa modal */}
-      {ventaExitosa && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-[#1a1d27] border border-green-500/30 rounded-2xl p-8 text-center max-w-sm mx-4 shadow-2xl">
-            <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-3xl">✅</span>
+      {/* Venta exitosa + boleta imprimible */}
+      {ventaCompletada && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1a1d27] border border-green-500/30 rounded-2xl overflow-hidden max-w-sm w-full shadow-2xl">
+            <div className="p-6 text-center border-b border-[#2d3148] no-print">
+              <div className="w-14 h-14 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-2xl">✅</span>
+              </div>
+              <h2 className="text-lg font-bold text-white">¡Venta registrada!</h2>
             </div>
-            <h2 className="text-xl font-bold text-white mb-2">¡Venta Exitosa!</h2>
-            <p className="text-slate-400 text-sm mb-1">Número de venta:</p>
-            <p className="text-green-400 font-mono font-bold text-lg mb-4">{ventaExitosa}</p>
-            <button
-              onClick={() => setVentaExitosa(null)}
-              className="w-full py-3 bg-green-600 hover:bg-green-500 rounded-xl font-semibold text-white transition-colors"
-            >
-              Nueva Venta
-            </button>
+
+            {/* Contenido de la boleta (esto es lo único que se imprime) */}
+            <div id="boleta-print-area" className="p-6 bg-white text-black font-mono text-xs leading-relaxed">
+              <div className="text-center mb-3">
+                <p className="font-bold text-sm">{configuracion?.nombre || "BOTELLAPP"}</p>
+                {configuracion?.direccion && <p>{configuracion.direccion}</p>}
+                {configuracion?.rut && <p>RUT: {configuracion.rut}</p>}
+                {configuracion?.telefono && <p>Tel: {configuracion.telefono}</p>}
+              </div>
+              <div className="border-t border-dashed border-black my-2" />
+              <p className="text-center font-bold">BOLETA DE VENTA</p>
+              <p className="text-center mb-2">N° {ventaCompletada.numero}</p>
+              <p>Fecha: {formatDate(ventaCompletada.createdAt)}</p>
+              <p>Cajero: {ventaCompletada.usuario.nombre}</p>
+              <div className="border-t border-dashed border-black my-2" />
+              {ventaCompletada.items.map((item, i) => (
+                <div key={i} className="mb-1.5">
+                  <p>{item.producto.nombre}</p>
+                  <div className="flex justify-between">
+                    <span>{item.cantidad} x {formatCLP(item.precio)}</span>
+                    <span>{formatCLP(item.subtotal)}</span>
+                  </div>
+                </div>
+              ))}
+              <div className="border-t border-dashed border-black my-2" />
+              <div className="flex justify-between">
+                <span>Subtotal</span>
+                <span>{formatCLP(ventaCompletada.subtotal)}</span>
+              </div>
+              {ventaCompletada.descuento > 0 && (
+                <div className="flex justify-between">
+                  <span>Descuento</span>
+                  <span>-{formatCLP(ventaCompletada.descuento)}</span>
+                </div>
+              )}
+              <div className="flex justify-between font-bold text-sm mt-1">
+                <span>TOTAL</span>
+                <span>{formatCLP(ventaCompletada.total)}</span>
+              </div>
+              <p className="mt-1">
+                Pago: {METODOS_PAGO_LABEL[ventaCompletada.metodoPago] || ventaCompletada.metodoPago}
+              </p>
+              <div className="border-t border-dashed border-black my-2" />
+              <p className="text-center">¡Gracias por su compra!</p>
+            </div>
+
+            <div className="p-4 flex gap-2 no-print">
+              <button
+                onClick={() => window.print()}
+                className="flex-1 py-3 bg-[#0f1117] border border-[#2d3148] hover:border-purple-500/50 rounded-xl font-semibold text-white transition-colors text-sm"
+              >
+                🖨️ Imprimir boleta
+              </button>
+              <button
+                onClick={() => setVentaCompletada(null)}
+                className="flex-1 py-3 bg-green-600 hover:bg-green-500 rounded-xl font-semibold text-white transition-colors text-sm"
+              >
+                Nueva venta
+              </button>
+            </div>
           </div>
         </div>
       )}
