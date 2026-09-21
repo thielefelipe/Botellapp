@@ -11,8 +11,8 @@ export default defineConfig({
   migrations: {
     path: "prisma/migrations",
   },
-  datasource: isPg ? {
+  datasource: {
     url: process.env["DATABASE_URL"],
-  } : undefined,
+  },
 });
 
