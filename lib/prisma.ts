@@ -9,7 +9,6 @@ function createPrismaClient(): PrismaClient {
 
   // SQLite / libsql local development
   if (!dbUrl || dbUrl.startsWith("file:") || dbUrl.startsWith("libsql:")) {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { PrismaLibSql } = require("@prisma/adapter-libsql");
     const path = require("path") as typeof import("path");
 
@@ -24,9 +23,7 @@ function createPrismaClient(): PrismaClient {
   }
 
   // PostgreSQL (Render production)
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { Pool } = require("pg") as typeof import("pg");
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { PrismaPg } = require("@prisma/adapter-pg");
   const pool = new Pool({
     connectionString: dbUrl,

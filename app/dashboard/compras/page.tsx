@@ -38,7 +38,11 @@ export default function ComprasPage() {
     ]).then(([c, p, pr]) => { setCompras(c); setProveedores(p); setProductos(pr); setLoading(false); });
   };
 
-  useEffect(cargar, []);
+  useEffect(() => {
+    // patrón estándar de fetch-on-mount; cargar() también se reusa para refetch tras crear
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    cargar();
+  }, []);
 
   const agregarItem = () => {
     if (!prodSelec) return;

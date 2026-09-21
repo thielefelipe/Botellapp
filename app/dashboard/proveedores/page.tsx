@@ -27,7 +27,11 @@ export default function ProveedoresPage() {
       .then(data => { setProveedores(data); setLoading(false); });
   };
 
-  useEffect(cargar, []);
+  useEffect(() => {
+    // patrón estándar de fetch-on-mount; cargar() también se reusa para refetch tras crear/editar
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    cargar();
+  }, []);
 
   const guardar = async () => {
     await fetch("/api/proveedores", {

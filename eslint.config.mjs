@@ -13,6 +13,14 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    // Plain CommonJS Node scripts and conditional driver loading:
+    // require() is intentional here, not a stray import style choice.
+    files: ["prisma/seed.js", "scripts/**/*.js", "electron/**/*.js", "lib/prisma.ts"],
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;

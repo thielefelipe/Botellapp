@@ -36,10 +36,14 @@ Disponible en Web, Escritorio (Windows/Mac/Linux) y Móvil (Android/iOS).
 # 1. Instalar
 npm install
 
-# 2. Base de datos SQLite (automática)
+# 2. Variables de entorno
+cp .env.example .env
+# Editar JWT_SECRET en .env (ver instrucciones dentro del archivo)
+
+# 3. Base de datos SQLite (automática)
 npm run db:push && npm run seed
 
-# 3. Iniciar
+# 4. Iniciar
 npm run dev
 ```
 → http://localhost:3000
@@ -51,13 +55,23 @@ docker compose up -d
 npm run db:push && npm run seed && npm run dev
 ```
 
-## 🔑 Credenciales Demo
+## 🔑 Acceso y Credenciales Demo
 
-| Rol | Email | Contraseña |
-|-----|-------|------------|
-| Admin | admin@botellapp.cl | admin123 |
-| Propietario | propietario@botellapp.cl | propietario123 |
-| Vendedor | vendedor@botellapp.cl | vendedor123 |
+El sistema es **multi-tenant**: cada cliente tiene su propia URL de login por slug, y puede tener una o más sucursales (negocios).
+
+| Cliente | Login | Sucursales |
+|---------|-------|------------|
+| Rincón Patrimonial | `/login/rincon-patrimonial` | Única |
+| 4M | `/login/4m` | 4M Contulmo, 4M Cañete |
+
+En cada sucursal, el seed crea dos usuarios (login por **usuario**, no email):
+
+| Usuario | Contraseña | Rol |
+|---------|------------|-----|
+| admin | admin123 | ADMIN |
+| vendedor | vendedor123 | VENDEDOR |
+
+> El rol `PROPIETARIO` existe en la lógica de permisos (`components/dashboard/Sidebar.tsx`, APIs) pero el seed no crea un usuario demo con ese rol.
 
 ---
 

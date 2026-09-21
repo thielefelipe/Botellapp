@@ -43,7 +43,11 @@ export default function CajaPage() {
       });
   };
 
-  useEffect(() => cargar(filtroTipo), [filtroTipo]);
+  useEffect(() => {
+    // patrón estándar de fetch-on-mount; cargar() también se reusa para refetch tras crear
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    cargar(filtroTipo);
+  }, [filtroTipo]);
 
   const categorias = form.tipo === "ingreso" ? CATEGORIAS_INGRESO : CATEGORIAS_EGRESO;
 
