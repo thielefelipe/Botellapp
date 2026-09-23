@@ -48,6 +48,39 @@ Configura en `package.json`:
 }
 ```
 
+## 🖨️ Impresora térmica (boleta ESC/POS)
+
+La app de escritorio puede imprimir la boleta directo en una impresora
+térmica (sin el diálogo de impresión del navegador). Se configura con
+variables de entorno antes de iniciar la app:
+
+```bash
+# Impresora en red (recomendado, no requiere drivers ni recompilar nada)
+THERMAL_PRINTER_INTERFACE="tcp://192.168.0.99:9100" npm start
+
+# Impresora instalada en el sistema operativo (USB), por nombre exacto
+THERMAL_PRINTER_INTERFACE="printer:Nombre de la impresora" npm start
+
+# O dejar que intente detectar la predeterminada del sistema
+npm start   # equivale a THERMAL_PRINTER_INTERFACE="printer:auto"
+```
+
+Otras variables opcionales:
+- `THERMAL_PRINTER_TYPE` — `epson` (default), `star`, `tanca`, `daruma`, `brother`
+- `THERMAL_PRINTER_WIDTH` — caracteres por línea (default `48`, típico para
+  papel de 80mm; usa `32` para papel de 58mm)
+
+Si usas la interfaz `printer:` (impresora USB instalada por el sistema),
+esa parte de la librería depende de un módulo nativo — si falla al
+instalar o al imprimir, puede que necesites recompilarlo para Electron con
+`npx electron-rebuild`. La interfaz `tcp://` es JavaScript puro y no tiene
+ese problema — si tu impresora soporta red, es la opción más simple para
+empezar a probar.
+
+Si no hay impresora térmica conectada o falla la conexión, el botón
+"Imprimir boleta" en la app cae de vuelta al diálogo de impresión normal
+del navegador (igual que en la versión web).
+
 ## 💡 Atajos de teclado
 
 | Atajo | Función |

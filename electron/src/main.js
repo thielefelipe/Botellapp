@@ -8,6 +8,7 @@
 const { app, BrowserWindow, Menu, Tray, nativeImage, shell, dialog, ipcMain } = require("electron");
 const path = require("path");
 const { autoUpdater } = require("electron-updater");
+const { imprimirBoleta, abrirCajon } = require("./impresora");
 
 // ──────────────────────────────────────────────
 // CONFIGURATION
@@ -33,6 +34,7 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       webSecurity: true,
+      preload: path.join(__dirname, "preload.js"),
     },
     // On Mac, use traffic lights style
     ...(process.platform === "darwin" ? {
@@ -136,6 +138,15 @@ function createAppMenu() {
   const menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);
 }
+
+// IPC: impresión térmica (ver src/impresora.js)
+ipcMain.handle("imprimir-boleta", async (event, { venta, configuracion }) => {
+  return imprimirBoleta(venta, configuracion);
+});
+
+ipcMain.handle("abrir-cajon", async () => {
+  return abrirCajon();
+});
 
 // App Events
 app.whenReady().then(() => {

@@ -14,7 +14,8 @@
   "author": "BOTELLAPP",
   "license": "MIT",
   "dependencies": {
-    "electron-updater": "^6.3.0"
+    "electron-updater": "^6.3.0",
+    "node-thermal-printer": "^4.6.1"
   },
   "devDependencies": {
     "electron": "^33.0.0",

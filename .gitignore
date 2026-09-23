@@ -1,5 +1,8 @@
 # dependencies
 /node_modules
+electron/node_modules
+mobile/node_modules
+electron/dist
 
 # next.js
 /.next/

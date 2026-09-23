@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { formatCLP, formatDate } from "@/lib/utils";
+import { enAppEscritorio } from "@/lib/electron-bridge";
 
 interface Producto {
   id: number;
@@ -72,6 +73,14 @@ export default function VentasPage() {
   const [montoPagado, setMontoPagado] = useState<number>(0);
   const [categorias, setCategorias] = useState<string[]>([]);
   const [configuracion, setConfiguracion] = useState<Configuracion | null>(null);
+  const [imprimiendo, setImprimiendo] = useState(false);
+  const [escritorio, setEscritorio] = useState(false);
+
+  useEffect(() => {
+    // enAppEscritorio() solo puede evaluarse en el cliente (mira window.botellappDesktop)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setEscritorio(enAppEscritorio());
+  }, []);
 
   useEffect(() => {
     fetch("/api/productos")
@@ -182,6 +191,28 @@ export default function VentasPage() {
       setProcesando(false);
     }
   }, [carrito, metodoPago, totalDescuento, notas]);
+
+  const imprimir = useCallback(async () => {
+    if (!ventaCompletada) return;
+
+    if (!escritorio || !window.botellappDesktop) {
+      window.print();
+      return;
+    }
+
+    setImprimiendo(true);
+    try {
+      const resultado = await window.botellappDesktop.imprimirBoleta(ventaCompletada, configuracion);
+      if (!resultado.ok) {
+        alert(
+          `No se pudo imprimir en la impresora térmica:\n${resultado.error}\n\nSe abrirá la impresión normal como respaldo.`
+        );
+        window.print();
+      }
+    } finally {
+      setImprimiendo(false);
+    }
+  }, [ventaCompletada, configuracion, escritorio]);
 
   return (
     <div className="h-screen flex overflow-hidden">
@@ -454,13 +485,25 @@ export default function VentasPage() {
               <p className="text-center">¡Gracias por su compra!</p>
             </div>
 
-            <div className="p-4 flex gap-2 no-print">
-              <button
-                onClick={() => window.print()}
-                className="flex-1 py-3 bg-[#0f1117] border border-[#2d3148] hover:border-purple-500/50 rounded-xl font-semibold text-white transition-colors text-sm"
-              >
-                🖨️ Imprimir boleta
-              </button>
+            <div className="p-4 flex flex-col gap-2 no-print">
+              <div className="flex gap-2">
+                <button
+                  onClick={imprimir}
+                  disabled={imprimiendo}
+                  className="flex-1 py-3 bg-[#0f1117] border border-[#2d3148] hover:border-purple-500/50 disabled:opacity-50 rounded-xl font-semibold text-white transition-colors text-sm"
+                >
+                  {imprimiendo ? "⏳ Imprimiendo..." : "🖨️ Imprimir boleta"}
+                </button>
+                {escritorio && (
+                  <button
+                    onClick={() => window.botellappDesktop?.abrirCajon()}
+                    title="Abrir cajón portamonedas"
+                    className="px-4 py-3 bg-[#0f1117] border border-[#2d3148] hover:border-purple-500/50 rounded-xl font-semibold text-white transition-colors text-sm"
+                  >
+                    🗄️
+                  </button>
+                )}
+              </div>
               <button
                 onClick={() => setVentaCompletada(null)}
                 className="flex-1 py-3 bg-green-600 hover:bg-green-500 rounded-xl font-semibold text-white transition-colors text-sm"
