@@ -28,12 +28,26 @@ If Not objFSO.FileExists(strRuta & "\dev.db") Then
     WScript.Quit
 End If
 
-' 0 = sin ventana visible, False = no espera a que termine (el servidor
-' queda corriendo de fondo)
-objShell.Run "cmd /c npm run dev", 0, False
+Function ServidorActivo()
+    On Error Resume Next
+    Dim http
+    Set http = CreateObject("WinHttp.WinHttpRequest.5.1")
+    http.SetTimeouts 1000, 1000, 1000, 1000
+    http.Open "GET", "http://localhost:3000/", False
+    http.Send
+    ServidorActivo = (Err.Number = 0)
+    On Error Goto 0
+End Function
 
-' Espera a que el servidor esté listo antes de abrir la ventana
-WScript.Sleep 7000
+' Si ya hay un servidor corriendo (de una ventana anterior que no se
+' cerró bien), no prendemos otro encima — eso es lo que causaba varios
+' node.exe peleando por el puerto 3000 y páginas con error 404.
+If Not ServidorActivo() Then
+    ' 0 = sin ventana visible, False = no espera a que termine (el
+    ' servidor queda corriendo de fondo)
+    objShell.Run "cmd /c npm run dev", 0, False
+    WScript.Sleep 7000
+End If
 
 ' Abre en modo "app" de Edge: sin barra de direcciones ni pestañas.
 objShell.Run "cmd /c start msedge --app=http://localhost:3000/login/rincon-patrimonial", 0, False
