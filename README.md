@@ -48,6 +48,12 @@ npm run dev
 ```
 → http://localhost:3000
 
+**Windows: iniciar con un ícono en el Escritorio.** Después de hacer los
+pasos 1-3 una vez, click derecho en `iniciar-botellapp.bat` → *Enviar a* →
+*Escritorio (crear acceso directo)*. Ese ícono prende el servidor y abre el
+navegador solo — no repite la instalación ni la base de datos, así que no
+hace falta volver a correr `npm install`/`db:push`/`seed` cada vez.
+
 **Con PostgreSQL (Docker):**
 ```bash
 docker compose up -d
